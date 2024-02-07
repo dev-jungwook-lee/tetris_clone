@@ -8,6 +8,10 @@
 - precise controls [ ]
 
 
+#### Precise Controls
+- use a stack to implement the saving of states
+
+
 #### Features
 - scoreboard
 - incremental levels

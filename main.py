@@ -1,4 +1,4 @@
-import pygame
+import pygame as pg
 import yaml
 
 from game.grid import Grid
@@ -9,10 +9,10 @@ from game.utils import *
 
 def main(cfg):
     run = True
-    pygame.init()
-    win = pygame.display.set_mode((cfg.display.width, cfg.display.height))
-    pygame.display.set_caption("Tetris Clone")
-    clock = pygame.time.Clock()
+    pg.init()
+    win = pg.display.set_mode((cfg.display.width, cfg.display.height))
+    pg.display.set_caption("Tetris Clone")
+    clock = pg.time.Clock()
 
     # init
     cur_grid = Grid(cfg.grid)
@@ -20,28 +20,61 @@ def main(cfg):
     generate_new = True
     key_hold = None
 
+    # stack
+    # what do we want to do? until the press up is detected
+    # we would like the motion to continue in that direction
+    key_stack = []
+    cur_dir = None
+
     # game loop
     while run:
         # sets the fps for the game
         clock.tick(cfg.fps)
 
         # catch event for end of run
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
                 run = False
 
             # get keystrokes to update piece
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_RIGHT]:
-                cur_grid.move(direction="right")
-            elif keys[pygame.K_LEFT]:
-                cur_grid.move(direction="left")
-            elif keys[pygame.K_UP]:
-                cur_grid.rotate()
-            elif keys[pygame.K_SPACE]:
-                generate_new = True
-            elif keys[pygame.K_q]:
-                run = False
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_RIGHT:
+                    if "right" in key_stack:
+                        key_stack.remove("right")
+                    cur_dir = "right"
+                    key_stack.append(cur_dir)
+                elif event.key == pg.K_LEFT:
+                    if "left" in key_stack:
+                        key_stack.remove("left")
+                    cur_dir = "left"
+                    key_stack.append(cur_dir)
+                elif event.key == pg.K_UP:
+                    cur_grid.rotate()
+                elif event.key == pg.K_SPACE:
+                    generate_new = True
+                elif event.key == pg.K_q:
+                    run = False
+
+            if event.type == pg.KEYUP:
+                if event.key == pg.K_RIGHT:
+                    if "right" in key_stack:
+                        key_stack.remove("right")
+                    if key_stack:
+                        cur_dir = key_stack[-1]
+                    else:
+                        cur_dir = None
+                if event.key == pg.K_LEFT:
+                    if "left" in key_stack:
+                        key_stack.remove("left")
+                    if key_stack:
+                        cur_dir = key_stack[-1]
+                    else:
+                        cur_dir = None
+
+        # peek for the direction and execute
+        if cur_dir:
+            cur_grid.move(direction=cur_dir)
+
 
         # retrieve next block
         if generate_new:
@@ -50,9 +83,9 @@ def main(cfg):
             generate_new = False
 
         cur_grid.draw(win)
-        pygame.display.update()
+        pg.display.update()
 
-    pygame.quit()
+    pg.quit()
 
 
 if __name__ == '__main__':
